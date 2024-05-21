@@ -41,13 +41,19 @@ class MissingOptionalDependency:
 
 
 class MissingPandas(MissingOptionalDependency):
-    """The class is specifically for pandas optional dependency."""
+    """The class is specifically for the pandas optional dependency."""
 
     _dep_name = "pandas"
 
 
+class MissingPyarrow(MissingOptionalDependency):
+    """The class is specifically for the pyarrow optional dependency."""
+
+    _dep_name = "pyarrow"
+
+
 class MissingKeyring(MissingOptionalDependency):
-    """The class is specifically for sso optional dependency."""
+    """The class is specifically for the sso optional dependency."""
 
     _dep_name = "keyring"
 
@@ -64,20 +70,26 @@ def warn_incompatible_dep(
         stacklevel=2,
     )
 
+def _import_or_missing_pandas_option() -> tuple[ModuleLikeObject, bool]:
+    """This function tries importing the pandas package.
 
-def _import_or_missing_pandas_option() -> (
-    tuple[ModuleLikeObject, ModuleLikeObject, bool]
-):
-    """This function tries importing the following packages: pandas, pyarrow.
-
-    If available it returns pandas and pyarrow packages with a flag of whether they were imported.
-    It also warns users if they have an unsupported pyarrow version installed if possible.
+    If available it returns the pandas package with a flag of whether it was imported.
     """
     try:
         pandas = importlib.import_module("pandas")
-        # since we enable relative imports without dots this import gives us an issues when ran from test directory
         from pandas import DataFrame  # NOQA
+        return pandas, True
+    except ImportError:
+        return MissingPandas(), False
 
+
+def _import_or_missing_pyarrow_option() -> tuple[ModuleLikeObject, bool]:
+    """This function tries importing the pyarrow package.
+
+    If available it returns pyarrow package with a flag of whether it was imported.
+    It also warns users if they have an unsupported pyarrow version installed (if possible).
+    """
+    try:
         pyarrow = importlib.import_module("pyarrow")
 
         # set default memory pool to system for pyarrow to_pandas conversion
@@ -96,9 +108,9 @@ def _import_or_missing_pandas_option() -> (
             for dependency in dependencies:
                 dep = Requirement(dependency)
                 if (
-                    dep.marker is not None
-                    and dep.marker.evaluate({"extra": "pandas"})
-                    and dep.name == "pyarrow"
+                        dep.marker is not None
+                        and dep.marker.evaluate({"extra": "pandas"})
+                        and dep.name == "pyarrow"
                 ):
                     pandas_pyarrow_extra = dep
                     break
@@ -114,9 +126,9 @@ def _import_or_missing_pandas_option() -> (
                 "Cannot determine if compatible pyarrow is installed because of missing package(s) from "
                 "{}".format(list(installed_packages.keys()))
             )
-        return pandas, pyarrow, True
+        return pyarrow, True
     except ImportError:
-        return MissingPandas(), MissingPandas(), False
+        return MissingPyarrow(), False
 
 
 def _import_or_missing_keyring_option() -> tuple[ModuleLikeObject, bool]:
@@ -132,5 +144,6 @@ def _import_or_missing_keyring_option() -> tuple[ModuleLikeObject, bool]:
 
 
 # Create actual constants to be imported from this file
-pandas, pyarrow, installed_pandas = _import_or_missing_pandas_option()
+pandas, installed_pandas = _import_or_missing_pandas_option()
+pyarrow, installed_pyarrow = _import_or_missing_pyarrow_option()
 keyring, installed_keyring = _import_or_missing_keyring_option()

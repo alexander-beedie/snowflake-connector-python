@@ -65,7 +65,7 @@ from .errors import (
     NotSupportedError,
     ProgrammingError,
 )
-from .options import installed_pandas
+from .options import installed_pandas, installed_pyarrow
 from .sqlstate import SQLSTATE_FEATURE_NOT_SUPPORTED
 from .telemetry import TelemetryData, TelemetryField
 from .time_util import get_time_millis
@@ -85,9 +85,15 @@ logger = getLogger(__name__)
 
 if not installed_pandas:
     logger.debug(
-        "Failed to import pyarrow or pandas. Cannot use pandas fetch API. Please "
-        "install snowflake-connector-python with the `pandas` extra to use these "
-        "features."
+        "Failed to import pandas. Cannot use pandas fetch API. Please install "
+        "snowflake-connector-python with the `pandas` extra to use these features."
+    )
+
+if not installed_pyarrow:
+    logger.debug(
+        "Failed to import pyarrow. Cannot use pyarrow fetch API. Please install "
+        "snowflake-connector-python with the `pyarrow` (or `pandas`) extra to "
+        "use these features."
     )
 
 
